@@ -17,3 +17,23 @@ class SiTDataLoader:
             raise FileNotFoundError(f"ego_trajectory folder not found")
         print(f"Loading sequence: {sequence_path.name}")
     
+    def parse_pedestrians(self, filepath):
+        pedestrians = []
+
+        try:
+            with open(filepath, 'r') as f:
+                for line in f:
+                    parts = line.strip().split()
+                    if len(parts) >= 9:
+                        pedestrians.append({
+                            'type': parts[0],
+                            'id': parts[1],
+                            'x': float(parts[5]),
+                            'y': float(parts[6]),
+                            'z': float(parts[7]),
+                            'rotation': float(parts[8])
+                        })
+        except Exception as e:
+            print(f"Warning: ERror parsing {filepath}: {e}")
+        
+        return pedestrians
