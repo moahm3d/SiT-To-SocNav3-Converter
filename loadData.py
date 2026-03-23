@@ -37,3 +37,21 @@ class SiTDataLoader:
             print(f"Warning: ERror parsing {filepath}: {e}")
         
         return pedestrians
+    
+    def parse_robot_pose(self, filepath):
+        try:
+            with open(filepath, 'r') as f:
+                values = [float(x) for x in f.read().strip().split(',')]
+
+                if len(values) == 16:
+                    matrix = np.array(values.reshape(4, 4))
+                    x = matrix[0,3]
+                    y = matrix[1,3]
+                    z = matrix[2,3]
+
+                    return [x, y, z]
+        except Exception as e:
+            print(f"Warning: Error parsing {filepath}: {e}")
+        
+        return None
+
