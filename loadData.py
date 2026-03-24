@@ -16,6 +16,19 @@ class SiTDataLoader:
         if not robot_dir.exists():
             raise FileNotFoundError(f"ego_trajectory folder not found")
         print(f"Loading sequence: {sequence_path.name}")
+
+        frames = self.load_all_frames(label_dir, robot_dir)
+        trajectories = self.build_trajectories(frames)
+        num_frames = len(frames)
+        timestamps = [i * 0.1 for i in range(num_frames)]
+
+        metadata = {
+            'sequence_name': sequence_path.name,
+            'num_frames': num_frames,
+            'num_agents': len(trajectories) - 1,
+            'fps': 10.0,
+            'duration_seconds': num_frames * 0.1
+        }
     
     def parse_pedestrians(self, filepath):
         pedestrians = []
@@ -87,3 +100,25 @@ class SiTDataLoader:
             agent_tracks['robot_0']['timestamps'].append(frame_time)
 
         return list(agent_tracks.values())
+    
+    def load_all_frames(self, label_dir, robot_dir):
+        label_files = sorted(label_dir.glob("*.txt"), key=lambda x: int(x.stem))
+
+        frames = []
+        for label_file in label_files:
+            frame_num = int(label_file.stem)
+            pedestrians = self.parse_pedestrians(label_file)
+            robot_file = robot_dir / f"{frame_num}.txt"
+            if robot_file.exists():
+                robot_pose = self.parse_robot_Pose(robot_file)
+            
+            frames.append({
+                'frame_id': frame_num,
+                'pedestrians': pedestrians,
+                'robot_pose': robot_pose
+            })
+
+        print(f"Loaded {len(frames)} frames")
+        return frames
+    
+    
