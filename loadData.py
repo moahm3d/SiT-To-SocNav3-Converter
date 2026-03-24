@@ -54,4 +54,36 @@ class SiTDataLoader:
             print(f"Warning: Error parsing {filepath}: {e}")
         
         return None
+    
+    def build_trajectories(self, frames):
+        agent_tracks = {}
 
+        for frame in frames:
+            frame_time = frame['frame_id'] * 0.1
+            for ped in frame['pedestrians']:
+                agent_id = ped['id']
+
+                if agent_id not in agent_tracks:
+                    agent_tracks[agent_id] = {
+                        'agent_id': agent_id,
+                        'type': 'human',
+                        'positions': [],
+                        'timestamps': []
+                    }
+
+                agent_tracks[agent_id]['positions'].append([ped['x'], ped['y'], ped['z']])
+                agent_tracks[agent_id]['timestamps'].append(frame_time)
+
+        if frame['robot_pose'] is not None:
+            if 'robot_0' not in agent_tracks:
+                agent_tracks['robot_0'] = {
+                    'agent_id': 'robot_0',
+                    'type': 'robot',
+                    'position': [],
+                    'timestamps': []
+                }
+
+            agent_tracks['robot_0']['positions'].append(frame['robot_pose'])
+            agent_tracks['robot_0']['timestamps'].append(frame_time)
+
+        return list(agent_tracks.values())
