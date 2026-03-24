@@ -121,4 +121,7 @@ class SiTDataLoader:
         print(f"Loaded {len(frames)} frames")
         return frames
     
+    def load_sit_dataset(sequence_path):
+        loader = SiTDataLoader()
+        return loader.load_sit_sequence(sequence_path)
     
