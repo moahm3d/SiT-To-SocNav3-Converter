@@ -1,6 +1,9 @@
 import numpy as np
 
 class TrajProcess:
+    def __init__(self, position_threshold=0.01):
+        self.threshold = position_threshold
+        print(f"Preprocessor initalised (threshold: {position_threshold}m)")
     def compute_velocity(self, positions, times):
         velocities = []
 
