@@ -45,3 +45,27 @@ class TrajProcess:
             orientations = [0.0]
         
         return orientations
+    
+    def clean_duplicates(self, positions, times):
+        if len(positions) == 0:
+            return positions, times
+        keep = [True]
+        for i in range(1, len(positions)):
+            prev = positions[i-1]
+            curr = positions[i]
+
+            dx = curr[0] - prev[0]
+            dy = curr[1] - prev[1]
+            dz = curr[2] - prev[2]
+            distance = np.sqrt(dx**2 + dy**2 + dz**2)
+
+            if distance > self.threshold:
+                keep.append(True)
+            else:
+                keep.append(False)
+            
+
+        clean_pos = [positions[i] for i in range(len(positions)) if keep[i]]
+        clean_times = [times[i] for i in range (len(times)) if keep[i]]
+
+        return clean_pos, clean_times
