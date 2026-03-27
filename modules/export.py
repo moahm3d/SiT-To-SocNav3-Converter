@@ -50,6 +50,47 @@ class Exporter:
 
         return people
     
+    def build_grid(self, trajectories):
+        all_positions = []
+        for traj in trajectories:
+            all_positions.extend(traj['positions'])
+        
+        if not all_positions:
+            return {
+                "width": 200,
+                "height": 200,
+                "cell_size": 0.1,
+                "x_orig": -10.0,
+                "y_orig": -10.0,
+                "angle_orig": 0.0,
+                "data": [[0]]
+            }
+        
+        positions = np.array(all_positions)
+        min_x = positions[:, 0].min()
+        max_x = positions[:, 0].max()
+        min_y = positions[:, 1].min()
+        max_y = positions[:, 1].max()
+        padding = 2.0
+        min_x -= padding
+        max_x += padding
+        min_y -= padding
+        max_y += padding
+        
+        width = max_x - min_x
+        height = max_y - min_y
+        cell_size = 0.1
+        grid_width = int(np.ceil(width / cell_size))
+        grid_height = int(np.ceil(height / cell_size))
 
+        grid_data = [[0 for _ in range(grid_width)] for _ in range(grid_height)]
 
-
+        return {
+            "width": grid_width,
+            "height": grid_height,
+            "cell_size": cell_size,
+            "x_orig": float(min_x),
+            "y_orig": float(min_y),
+            "angle_orig": 0.0,
+            "data": grid_data
+        }
