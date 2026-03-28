@@ -140,3 +140,29 @@ class Exporter:
 
             sequence.append(frame)
         return sequence
+    
+    def build_socnav3_structure(self, data, sequence_path, metadata):
+        trajectories = data['trajectories']
+        robot_traj = None
+        human_trajs = []
+        for traj in trajectories:
+            if traj['type'] == 'robot':
+                robot_traj = traj
+            else:
+                human_trajs.append(traj)
+        
+        if robot_traj is None:
+            raise ValueError("No robot trajectory found")
+        
+        sequence = self.build_sequence(robot_traj, human_trajs)
+        grid = self.build_grid(trajectories)
+        return {
+            "metadata": metadata or f"Converted frmo SiT: {data['metadata']['sequence_name']}",
+            "sequence": sequence,
+            "grid": grid,
+        }
+    
+    def export_to_socnav3(data, output_path, sequence_path=None, metadata=""):
+        exporter = Exporter()
+        return exporter.export_to_socnav3(data, output_path, sequence_path, metadata)
+        
