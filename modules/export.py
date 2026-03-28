@@ -94,3 +94,49 @@ class Exporter:
             "angle_orig": 0.0,
             "data": grid_data
         }
+    
+    def build_sequence(self, robot_traj, human_trajs):
+        sequence = []
+
+        robot_positions = robot_traj['positions']
+        robot_times = robot_traj['timestamps']
+        robot_velocities = robot_traj['velocities']
+        robot_orientations = robot_traj['orientations']
+
+        goal_x = robot_positions[-1][0]
+        goal_y = robot_positions[-1][1]
+        goal_angle = robot_orientations[-1]
+
+        for i, timestamp in enumerate(robot_times):
+            robot_state = {
+                "shape": self.robot_shape,
+                "x": float(robot_positions[i][0]),
+                "y": float(robot_positions[i][1]),
+                "angle": float(robot_orientations[i]),
+                "speed_x": float(robot_velocities[i][0]),
+                "speed_y": float(robot_velocities[i][1]),
+                "speed_a": 0.0
+            }
+
+            goal = {
+                "type": "go-to",
+                "human": None,
+                "x": float(goal_x),
+                "y": float(goal_y),
+                "angle": float(goal_angle),
+                "pos_threshold": 0.5,
+                "angle_threshold": 0.1
+            }
+
+            people = self.get_people_at_time(human_trajs, timestamp)
+
+            frame = {
+                "timestamp": float(timestamp),
+                "robot": robot_state,
+                "goal": goal,
+                "people": people,
+                "objects": []
+            }
+
+            sequence.append(frame)
+        return sequence
