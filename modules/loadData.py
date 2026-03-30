@@ -21,13 +21,21 @@ class SiTDataLoader:
         trajectories = self.build_trajectories(frames)
         num_frames = len(frames)
         timestamps = [i * 0.1 for i in range(num_frames)]
-
+        
         metadata = {
             'sequence_name': sequence_path.name,
             'num_frames': num_frames,
             'num_agents': len(trajectories) - 1,
             'fps': 10.0,
             'duration_seconds': num_frames * 0.1
+        }
+
+        print(f"Loaded {num_frames} frames with {len(trajectories)} agents")
+
+        return {
+            'trajectories': trajectories,
+            'timestamps': timestamps,
+            'metadata': metadata
         }
     
     def parse_pedestrians(self, filepath):
@@ -47,7 +55,7 @@ class SiTDataLoader:
                             'rotation': float(parts[8])
                         })
         except Exception as e:
-            print(f"Warning: ERror parsing {filepath}: {e}")
+            print(f"Warning: Error parsing {filepath}: {e}")
         
         return pedestrians
     
@@ -57,7 +65,7 @@ class SiTDataLoader:
                 values = [float(x) for x in f.read().strip().split(',')]
 
                 if len(values) == 16:
-                    matrix = np.array(values.reshape(4, 4))
+                    matrix = np.array(values).reshape(4, 4)
                     x = matrix[0,3]
                     y = matrix[1,3]
                     z = matrix[2,3]
@@ -87,12 +95,12 @@ class SiTDataLoader:
                 agent_tracks[agent_id]['positions'].append([ped['x'], ped['y'], ped['z']])
                 agent_tracks[agent_id]['timestamps'].append(frame_time)
 
-        if frame['robot_pose'] is not None:
-            if 'robot_0' not in agent_tracks:
-                agent_tracks['robot_0'] = {
+            if frame['robot_pose'] is not None:
+                if 'robot_0' not in agent_tracks:
+                    agent_tracks['robot_0'] = {
                     'agent_id': 'robot_0',
                     'type': 'robot',
-                    'position': [],
+                    'positions': [],
                     'timestamps': []
                 }
 
@@ -110,7 +118,7 @@ class SiTDataLoader:
             pedestrians = self.parse_pedestrians(label_file)
             robot_file = robot_dir / f"{frame_num}.txt"
             if robot_file.exists():
-                robot_pose = self.parse_robot_Pose(robot_file)
+                robot_pose = self.parse_robot_pose(robot_file)
             
             frames.append({
                 'frame_id': frame_num,
@@ -121,7 +129,6 @@ class SiTDataLoader:
         print(f"Loaded {len(frames)} frames")
         return frames
     
-    def load_sit_dataset(sequence_path):
-        loader = SiTDataLoader()
-        return loader.load_sit_sequence(sequence_path)
-    
+def load_sit_dataset(sequence_path):
+    loader = SiTDataLoader()
+    return loader.load_sit_sequence(sequence_path)
