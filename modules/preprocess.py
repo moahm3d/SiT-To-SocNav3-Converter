@@ -25,7 +25,7 @@ class TrajProcess:
         if velocities:
             velocities.insert(0, velocities[0])
         else:
-            velocities = [[0,0,0,]]
+            velocities = [[0,0,0]]
 
         return velocities
     
@@ -66,7 +66,7 @@ class TrajProcess:
             
 
         clean_pos = [positions[i] for i in range(len(positions)) if keep[i]]
-        clean_times = [times[i] for i in range (len(times)) if keep[i]]
+        clean_times = [times[i] for i in range(len(times)) if keep[i]]
 
         return clean_pos, clean_times
     
@@ -115,6 +115,6 @@ class TrajProcess:
             'metadata': data['metadata']
         }
     
-    def preprocess_trajectories(data, position_threshold=0.01):
-        preprocessor = TrajProcess(position_threshold)
-        return preprocessor.preprocess_trajectories(data)
+def preprocess_trajectories(data, position_threshold=0.01):
+    preprocessor = TrajProcess(position_threshold)
+    return preprocessor.preprocess_trajectories(data)
