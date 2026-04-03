@@ -5,6 +5,25 @@ from pathlib import Path
 class Exporter:
     def __init__(self):
         print("SocNav3 Exporter initialised")
+        self.robot_shape = {
+            "type": "circle",
+            "width": 0.6,
+            "length": 0.6
+        }
+
+    def export_to_socnav3(self, data, output_path, sequence_path=None, metadata=""):
+        print(f"Exporting to: {output_path}")
+        
+        socnav3_data = self.build_socnav3_structure(data, sequence_path, metadata)
+        
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        with open(output_path, 'w') as f:
+            json.dump(socnav3_data, f, indent=2)
+        
+        print(f"Saved to {output_path}")
+        return str(output_path)
     def get_people_at_time(self, human_trajs, timestamp):
         people = []
 
@@ -23,9 +42,9 @@ class Exporter:
             min_dif = abs(times[0] - timestamp)
 
             for i, t in enumerate(times):
-                diff = abs(t - timestamp)
-                if diff < min_diff:
-                    min_diff = diff
+                dif = abs(t - timestamp)
+                if dif < min_dif:
+                    min_dif = dif
                     closest_idx = i
             if closest_idx >= len(positions) or closest_idx >= len(orientations):
                 continue
@@ -34,7 +53,7 @@ class Exporter:
             try:
                 person_id = int(agent_id.split(':')[-1])
             except:
-                person_id = hash(agent_id) & 10000
+                person_id = hash(agent_id) % 10000
             
             try:
                 person = {
@@ -162,7 +181,6 @@ class Exporter:
             "grid": grid,
         }
     
-    def export_to_socnav3(data, output_path, sequence_path=None, metadata=""):
-        exporter = Exporter()
-        return exporter.export_to_socnav3(data, output_path, sequence_path, metadata)
-        
+def export_to_socnav3(data, output_path, sequence_path=None, metadata=""):
+    exporter = Exporter()
+    return exporter.export_to_socnav3(data, output_path, sequence_path, metadata)
