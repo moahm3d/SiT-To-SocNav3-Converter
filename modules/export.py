@@ -1,6 +1,7 @@
 import json
 import numpy as np
 from pathlib import Path
+from modules.wallExtraction import extract_walls_from_pcd
 
 class Exporter:
     def __init__(self):
@@ -160,6 +161,43 @@ class Exporter:
             sequence.append(frame)
         return sequence
     
+    def generate_boundary_walls(self,trajectories):
+        all_positions = []
+        for traj in trajectories:
+            all_positions.extend(traj['positions'])
+        if not all_positions:
+            return []
+        
+        positions = np.array(all_positions)
+        min_x = float(positions[:, 0].min())
+        max_x = float(positions[:, 0].max())
+        min_y = float(positions[:, 1].min())
+        max_y = float(positions[:, 1].max())
+
+        padding = 2.0
+        min_x -= padding
+        max_x += padding
+        min_y -= padding
+        max_y += padding
+
+        return [
+            [min_x, min_y, min_x, max_y],
+            [min_x, max_y, max_x, max_y],
+            [max_x, max_y, max_x, min_y],
+            [max_x, min_y, min_x, min_y],
+        ]
+    
+    def extract_walls(self, sequence_path, trajectories):
+
+        if sequence_path:
+            walls = extract_walls_from_pcd(sequence_path, sensor='top')
+            if walls:
+                 print(f"Extracted {len(walls)} walls frmo LiDAR")
+                 return walls
+        
+        print("Using trajectory-based boundary walls")
+        return self.generate_boundary_walls(trajectories)
+    
     def build_socnav3_structure(self, data, sequence_path, metadata):
         trajectories = data['trajectories']
         robot_traj = None
@@ -175,10 +213,12 @@ class Exporter:
         
         sequence = self.build_sequence(robot_traj, human_trajs)
         grid = self.build_grid(trajectories)
+        walls = self.extract_walls(sequence_path, trajectories)
         return {
             "metadata": metadata or f"Converted frmo SiT: {data['metadata']['sequence_name']}",
             "sequence": sequence,
             "grid": grid,
+            "walls": walls,
         }
     
 def export_to_socnav3(data, output_path, sequence_path=None, metadata=""):
