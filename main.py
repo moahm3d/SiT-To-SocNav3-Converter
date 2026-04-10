@@ -39,11 +39,11 @@ def main():
         print("\nExporting to SocNav3...")
         output_path = export_to_socnav3(processed_data, args.output, sequence_path=str(input_path))
         
-        print(f"\n✓ Success! Saved to: {output_path}")
+        print(f"\nSuccess! Saved to: {output_path}")
         print("=" * 60)
         
     except Exception as e:
-        print(f"\n✗ Error: {e}")
+        print(f"\nError: {e}")
         sys.exit(1)
 
 
