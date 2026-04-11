@@ -189,11 +189,13 @@ class Exporter:
     
     def extract_walls(self, sequence_path, trajectories):
 
-        if sequence_path:
-            walls = extract_walls_from_pcd(sequence_path, sensor='top')
-            if walls:
-                 print(f"Extracted {len(walls)} walls frmo LiDAR")
-                 return walls
+        #Ran into visual errors in the output using this method
+
+        #if sequence_path:
+            #walls = extract_walls_from_pcd(sequence_path, sensor='top')
+            #if walls:
+                 #print(f"Extracted {len(walls)} walls frmo LiDAR")
+                 #return walls
         
         print("Using trajectory-based boundary walls")
         return self.generate_boundary_walls(trajectories)
@@ -215,7 +217,7 @@ class Exporter:
         grid = self.build_grid(trajectories)
         walls = self.extract_walls(sequence_path, trajectories)
         return {
-            "metadata": metadata or f"Converted frmo SiT: {data['metadata']['sequence_name']}",
+            "metadata": metadata or f"Converted from SiT: {data['metadata']['sequence_name']}",
             "sequence": sequence,
             "grid": grid,
             "walls": walls,
