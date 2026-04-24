@@ -6,9 +6,14 @@ class SiTDataLoader:
     def __init__(self):
         print("Starting SiT Data Loader")
     def load_sit_sequence(self, sequence_path):
+        #Loads full SiT sequence from path
         sequence_path = Path(sequence_path)
+
+        #Validates folder's existence
         if not sequence_path.exists():
             raise FileNotFoundError(f"Folder not found: {sequence_path}")
+        
+        #Two folders required from the SiT structure
         label_dir = sequence_path / "label_3d"
         robot_dir = sequence_path / "ego_trajectory"
         if not label_dir.exists():
@@ -17,15 +22,19 @@ class SiTDataLoader:
             raise FileNotFoundError(f"ego_trajectory folder not found")
         print(f"Loading sequence: {sequence_path.name}")
 
+        #Load frames then build trajectories from them
         frames = self.load_all_frames(label_dir, robot_dir)
         trajectories = self.build_trajectories(frames)
+
+        #SiT runs at 10 fps so each frame is 0.1s
         num_frames = len(frames)
         timestamps = [i * 0.1 for i in range(num_frames)]
         
+        #Store info about sequence
         metadata = {
             'sequence_name': sequence_path.name,
             'num_frames': num_frames,
-            'num_agents': len(trajectories) - 1,
+            'num_agents': len(trajectories) - 1, #Excludes robot
             'fps': 10.0,
             'duration_seconds': num_frames * 0.1
         }
@@ -39,6 +48,8 @@ class SiTDataLoader:
         }
     
     def parse_pedestrians(self, filepath):
+        #Read pedestrian data from a label_3d text file
+        #Each line has: Type ID width height depth x y z rotation
         pedestrians = []
 
         try:
@@ -60,6 +71,8 @@ class SiTDataLoader:
         return pedestrians
     
     def parse_robot_pose(self, filepath):
+        #Read position from 4x4 transformation matrix
+        #File has 16 comma-separated numbers
         try:
             with open(filepath, 'r') as f:
                 values = [float(x) for x in f.read().strip().split(',')]
@@ -77,6 +90,8 @@ class SiTDataLoader:
         return None
     
     def build_trajectories(self, frames):
+        #Go through all frames and group positions by agent ID
+        #Builds continuous trajectory for each person & robot
         agent_tracks = {}
 
         for frame in frames:
@@ -110,6 +125,7 @@ class SiTDataLoader:
         return list(agent_tracks.values())
     
     def load_all_frames(self, label_dir, robot_dir):
+        #Load all frame files in order
         label_files = sorted(label_dir.glob("*.txt"), key=lambda x: int(x.stem))
 
         frames = []
@@ -128,7 +144,7 @@ class SiTDataLoader:
 
         print(f"Loaded {len(frames)} frames")
         return frames
-    
+#Loads sequence without making class
 def load_sit_dataset(sequence_path):
     loader = SiTDataLoader()
     return loader.load_sit_sequence(sequence_path)
