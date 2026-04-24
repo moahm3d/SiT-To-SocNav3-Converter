@@ -6,6 +6,7 @@ from modules.wallExtraction import extract_walls_from_pcd
 class Exporter:
     def __init__(self):
         print("SocNav3 Exporter initialised")
+        #Default robot shape
         self.robot_shape = {
             "type": "circle",
             "width": 0.6,
@@ -13,6 +14,8 @@ class Exporter:
         }
 
     def export_to_socnav3(self, data, output_path, sequence_path=None, metadata=""):
+        #Main export function
+        #Builds structure and saves to json
         print(f"Exporting to: {output_path}")
         
         socnav3_data = self.build_socnav3_structure(data, sequence_path, metadata)
@@ -20,12 +23,16 @@ class Exporter:
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
+        #Writes JSON file
         with open(output_path, 'w') as f:
             json.dump(socnav3_data, f, indent=2)
         
         print(f"Saved to {output_path}")
         return str(output_path)
+
     def get_people_at_time(self, human_trajs, timestamp):
+        #Finds all people who exist at given timestamp
+        #Returns list of person dictionaries for frame
         people = []
 
         for traj in human_trajs:
@@ -36,9 +43,11 @@ class Exporter:
             if len(times) == 0:
                 continue
 
+            #Skip if person isn't in the time
             if timestamp < times[0] or timestamp > times[-1]:
                 continue
 
+            #Finds closest timestamp for the person
             closest_idx = 0
             min_dif = abs(times[0] - timestamp)
 
@@ -47,6 +56,8 @@ class Exporter:
                 if dif < min_dif:
                     min_dif = dif
                     closest_idx = i
+
+            #Makes sure index valid
             if closest_idx >= len(positions) or closest_idx >= len(orientations):
                 continue
 
@@ -71,10 +82,13 @@ class Exporter:
         return people
     
     def build_grid(self, trajectories):
+        #Creates occupancy grid frmo traj bounds
+        #Grid cell are 0.1m each
         all_positions = []
         for traj in trajectories:
             all_positions.extend(traj['positions'])
         
+        #Default grid
         if not all_positions:
             return {
                 "width": 200,
@@ -86,23 +100,28 @@ class Exporter:
                 "data": [[0]]
             }
         
+        #Find bounds of all traj pos
         positions = np.array(all_positions)
         min_x = positions[:, 0].min()
         max_x = positions[:, 0].max()
         min_y = positions[:, 1].min()
         max_y = positions[:, 1].max()
+
+        #Add 2m padding
         padding = 2.0
         min_x -= padding
         max_x += padding
         min_y -= padding
         max_y += padding
         
+        #Calculate cells needed
         width = max_x - min_x
         height = max_y - min_y
         cell_size = 0.1
         grid_width = int(np.ceil(width / cell_size))
         grid_height = int(np.ceil(height / cell_size))
 
+        #Fill grid with zeros which makes free space
         grid_data = [[0 for _ in range(grid_width)] for _ in range(grid_height)]
 
         return {
@@ -116,6 +135,8 @@ class Exporter:
         }
     
     def build_sequence(self, robot_traj, human_trajs):
+        #Build sequence array
+        #Each frame has robot state, goal, people and objects
         sequence = []
 
         robot_positions = robot_traj['positions']
@@ -123,10 +144,13 @@ class Exporter:
         robot_velocities = robot_traj['velocities']
         robot_orientations = robot_traj['orientations']
 
+        #Goal is last position
         goal_x = robot_positions[-1][0]
         goal_y = robot_positions[-1][1]
         goal_angle = robot_orientations[-1]
 
+
+        #Build one frame for each robot timestamp
         for i, timestamp in enumerate(robot_times):
             robot_state = {
                 "shape": self.robot_shape,
@@ -148,6 +172,7 @@ class Exporter:
                 "angle_threshold": 0.1
             }
 
+            #Gets all people visible at timestamp
             people = self.get_people_at_time(human_trajs, timestamp)
 
             frame = {
@@ -155,13 +180,14 @@ class Exporter:
                 "robot": robot_state,
                 "goal": goal,
                 "people": people,
-                "objects": []
+                "objects": [] #No object annotations from sit data
             }
 
             sequence.append(frame)
         return sequence
     
     def generate_boundary_walls(self,trajectories):
+        #Creates 4 rect walls frmo traj bounds
         all_positions = []
         for traj in trajectories:
             all_positions.extend(traj['positions'])
@@ -174,12 +200,14 @@ class Exporter:
         min_y = float(positions[:, 1].min())
         max_y = float(positions[:, 1].max())
 
+        #Add 2m padding so walls aren't on top of trajs
         padding = 2.0
         min_x -= padding
         max_x += padding
         min_y -= padding
         max_y += padding
 
+        #left, top, right, bottom
         return [
             [min_x, min_y, min_x, max_y],
             [min_x, max_y, max_x, max_y],
@@ -189,7 +217,10 @@ class Exporter:
     
     def extract_walls(self, sequence_path, trajectories):
 
+
         #Ran into visual errors in the output using this method
+        #Unreliable results so using traj-based boundaries instead
+        #Needs to be updated in the future
 
         #if sequence_path:
             #walls = extract_walls_from_pcd(sequence_path, sensor='top')
@@ -201,7 +232,10 @@ class Exporter:
         return self.generate_boundary_walls(trajectories)
     
     def build_socnav3_structure(self, data, sequence_path, metadata):
+        #Everything in final SocNav3 structure
         trajectories = data['trajectories']
+
+        #Separates robot from human traj
         robot_traj = None
         human_trajs = []
         for traj in trajectories:
@@ -213,6 +247,7 @@ class Exporter:
         if robot_traj is None:
             raise ValueError("No robot trajectory found")
         
+        #Builds each part of output
         sequence = self.build_sequence(robot_traj, human_trajs)
         grid = self.build_grid(trajectories)
         walls = self.extract_walls(sequence_path, trajectories)
@@ -222,7 +257,8 @@ class Exporter:
             "grid": grid,
             "walls": walls,
         }
-    
+
+#Method to exports without creating class 
 def export_to_socnav3(data, output_path, sequence_path=None, metadata=""):
     exporter = Exporter()
     return exporter.export_to_socnav3(data, output_path, sequence_path, metadata)
