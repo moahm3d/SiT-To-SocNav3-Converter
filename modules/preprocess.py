@@ -2,16 +2,21 @@ import numpy as np
 
 class TrajProcess:
     def __init__(self, position_threshold=0.01):
+        #Threshold in metres
         self.threshold = position_threshold
         print(f"Preprocessor initalised (threshold: {position_threshold}m)")
     def compute_velocity(self, positions, times):
+        #Work out velocity between pair of consecutive positions
+        #velocity = change in pos / change in time
         velocities = []
 
         for i in range(len(positions) - 1):
+            #Change in each axis
             dx = positions[i+1][0] - positions[i][0]
             dy = positions[i+1][1] - positions[i][1]
             dz = positions[i+1][2] - positions[i][2]
 
+            #Time between frame
             dt = times[i+1] - times[i]
             if dt == 0:
                 dt = 0.000001
@@ -21,7 +26,7 @@ class TrajProcess:
             vz = dz / dt
 
             velocities.append([vx, vy, vz])
-
+        #First pos gets same velocity as second
         if velocities:
             velocities.insert(0, velocities[0])
         else:
@@ -30,6 +35,8 @@ class TrajProcess:
         return velocities
     
     def compute_orientation(self, positions):
+        #Work out direction agent is facing based on movement
+        #atan2 used to get angle in radians
 
         orientations = []
 
@@ -39,6 +46,7 @@ class TrajProcess:
             angle = np.arctan2(dy,dx)
             orientations.append(angle)
         
+        #First pos gets same orientation as second
         if orientations:
             orientations.insert(0, orientations[0])
         else:
@@ -47,13 +55,18 @@ class TrajProcess:
         return orientations
     
     def clean_duplicates(self, positions, times):
+        #Removes pos where agent hasn't moved
+        #Gets rid of stationary detections
         if len(positions) == 0:
             return positions, times
+        
+        #Always keep first pos
         keep = [True]
         for i in range(1, len(positions)):
             prev = positions[i-1]
             curr = positions[i]
 
+            #Calc 3D distance between consecutive pos
             dx = curr[0] - prev[0]
             dy = curr[1] - prev[1]
             dz = curr[2] - prev[2]
@@ -71,10 +84,14 @@ class TrajProcess:
         return clean_pos, clean_times
     
     def process_single_trajectory(self, traj):
+        #Process one agent's traj
+        #Clean and add velocity/orientation
         agent_id = traj['agent_id']
         agent_type = traj['type']
         positions = traj['positions']
         times = traj['timestamps']
+
+        #Needs 2 points at least
         if len(positions) < 2:
             return None
         
@@ -96,6 +113,7 @@ class TrajProcess:
         }
     
     def preprocess_trajectories(self, data):
+        #Run preprocess on all trajectories
         trajectories = data['trajectories']
 
         print(f"Preprocessing {len(trajectories)} trajectories")
@@ -104,6 +122,7 @@ class TrajProcess:
         for traj in trajectories:
             processed = self.process_single_trajectory(traj)
 
+            #Keeps only trajs that survived cleaning
             if processed is not None:
                 clean_trajectories.append(processed)
             
@@ -114,7 +133,8 @@ class TrajProcess:
             'timestamps': data['timestamps'],
             'metadata': data['metadata']
         }
-    
+
+#Preprocess without creating class
 def preprocess_trajectories(data, position_threshold=0.01):
     preprocessor = TrajProcess(position_threshold)
     return preprocessor.preprocess_trajectories(data)
