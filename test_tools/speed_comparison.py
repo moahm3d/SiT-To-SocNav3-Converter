@@ -5,13 +5,16 @@ from pathlib import Path
 
 
 def load_json(filepath):
+    #Loads JSON file
     with open(filepath, 'r') as f:
         return json.load(f)
 
 
 def get_average_speeds(data):
+    #Calc avg speed(total dist/ total time) by going through all frames and tracking each person pos over time
     sequence = data['sequence']
     
+    #Collects pos and timestamp for each person
     person_positions = {}
     person_timestamps = {}
     
@@ -28,12 +31,14 @@ def get_average_speeds(data):
             person_positions[pid].append([person['x'], person['y']])
             person_timestamps[pid].append(timestamp)
     
+    #Calc avg speed for each person
     avg_speeds = []
     
     for pid in person_positions:
         positions = person_positions[pid]
         times = person_timestamps[pid]
         
+        #Needs 2 pos to calculate speed
         if len(positions) < 2:
             continue
         
@@ -53,6 +58,7 @@ def get_average_speeds(data):
 
 
 def load_all_speeds(folder_path):
+    #Loads JSON files from folder and gets speed from each
     folder = Path(folder_path)
     all_speeds = []
     
@@ -72,11 +78,13 @@ def load_all_speeds(folder_path):
 
 
 def plot_comparison(original_speeds, converted_speeds):
+    #Plots both speed onto 1D plot 
     fig, ax = plt.subplots(figsize=(10, 3))
     
+    #Green = SocNAV3, Blue = SiT converted into SocNav3 format
     if original_speeds:
         ax.scatter(original_speeds, [1.0] * len(original_speeds),
-                   color='green', alpha=0.5, s=30, label='Original SocNav3')
+                   color='green', alpha=0.5, s=30, label='Original (SocNav3)')
     
     if converted_speeds:
         ax.scatter(converted_speeds, [0.5] * len(converted_speeds),
@@ -84,11 +92,12 @@ def plot_comparison(original_speeds, converted_speeds):
     
     ax.set_xlabel('Average Speed (m/s)')
     ax.set_yticks([0.5, 1.0])
-    ax.set_yticklabels(['Converted (SiT)', 'Original SocNav3'])
+    ax.set_yticklabels(['Converted (SiT)', 'Original (SocNav3)'])
     ax.set_title('Average Trajectory Speed Comparison')
     ax.legend(loc='upper right')
     ax.grid(True, axis='x', alpha=0.3)
     
+    #Set x axis range
     all_speeds = original_speeds + converted_speeds
     if all_speeds:
         ax.set_xlim(-0.1, min(max(all_speeds) * 1.2, 10))
@@ -99,9 +108,11 @@ def plot_comparison(original_speeds, converted_speeds):
     plt.show()
 
 
+#Paths to folders
 original_path = "socnav3_traj"
 converted_path = "test_output"
 
+#Prints the statistics
 print("Loading original SocNav3 data...")
 original_speeds = load_all_speeds(original_path)
 
@@ -120,4 +131,5 @@ if converted_speeds:
     print(f"  Mean: {arr.mean():.3f} m/s")
     print(f"  Min: {arr.min():.3f}, Max: {arr.max():.3f}")
 
+#Makes plot
 plot_comparison(original_speeds, converted_speeds)
