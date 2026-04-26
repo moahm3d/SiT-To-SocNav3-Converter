@@ -47,11 +47,7 @@ This generates a `speed_comparison.png` plot.
  
 To visualise the converted output, use the official SocNav3 visualisation tool:
 https://github.com/SocNavData/SocNavData2026
- 
-```
-python view_data.py --file test_output/cafeteria_1.json
-```
- 
+
 ## Project structure
  
 ```
