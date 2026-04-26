@@ -15,13 +15,13 @@ pip install -r requirements.txt
 ## Usage
  
 ```
-python main.py --sequence path/to/SiT/sequence --output output/filename.json
+python main.py --input path/to/SiT/sequence --output output/filename.json
 ```
  
 ## Example
  
 ```
-python main.py --sequence data/Cafeteria_1 --output test_output/cafeteria_1.json
+python main.py --input data/Cafeteria_1 --output test_output/cafeteria_1.json
 ```
  
 ## Running tests
