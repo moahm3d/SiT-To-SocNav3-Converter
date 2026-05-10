@@ -59,9 +59,9 @@ sit-to-socnav3-converter/
 │   └── wallExtraction.py    - LiDAR wall extraction (experimental)
 ├── test_tools/
 │   └── test_dataLoader.py   - Unit tests for data loading
+│   └── speed_comparison.py  - Speed analysis script
 ├── test_output/             - Converted JSON files
 ├── main.py                  - Command line interface
-├── speed_comparison.py      - Speed analysis script
 ├── requirements.txt
 └── README.md
 ```
